@@ -76,7 +76,71 @@ def process_voice_command():
         return jsonify({
             "error": f"Internal server error: {str(e)}"
         }), 500
+    
 def analyze_with_gemini(user_text):
+    """
+    Refined prompt for clearer intent recognition and better structured JSON responses.
+    """
+    prompt = f"""
+You are a smart voice assistant for the accessibility website "Sarathi". The website has these sections: Header, About, Services, Contact, Footer.
+
+The user said: "{user_text}"
+
+Analyze this user command carefully and return a single valid JSON object ONLY (no extra explanation or notes) with the following fields:
+
+- action: One of ["scroll", "navigate", "read", "unknown"]
+- target: The specific website section if applicable (one of "about", "services", "contact", "header", "footer") or null if not applicable
+- direction: For scroll actions, one of ["up", "down", "top", "bottom"] or null if not applicable
+- original_text: The exact original user input
+
+Instructions:
+- If the user command is a scrolling action, set action to "scroll" and direction accordingly.  
+Examples:  
+    "scroll down" -> {"action": "scroll", "direction": "down", "target": null}  
+    "scroll to top" -> {"action": "scroll", "direction": "top", "target": null}
+
+- If the user command is about navigating to a section, set action to "navigate" and target accordingly.  
+Examples:  
+    "go to about section" -> {"action": "navigate", "target": "about", "direction": null}  
+    "navigate to contact" -> {"action": "navigate", "target": "contact", "direction": null}
+
+- If the user command is about reading content aloud, set action to "read" and target accordingly.  
+Examples:  
+    "read the services" -> {"action": "read", "target": "services", "direction": null}  
+    "read contact info" -> {"action": "read", "target": "contact", "direction": null}
+
+- If the command is ambiguous, invalid, or not understood, set action to "unknown" and target/direction to null.
+
+Make sure the JSON output is properly formed, compliant with JSON syntax, and contains no trailing commas or comments. Return ONLY the JSON object, nothing else.
+"""
+    try:
+        response = model.generate_content(prompt)
+        ai_text = response.text.strip()
+
+        # Debug print to verify AI output
+        print(f"AI Response: {ai_text}")
+
+        gemini_response = json.loads(ai_text)
+        gemini_response["original_text"] = user_text
+        return gemini_response
+    except json.JSONDecodeError:
+        return {
+            "action": "unknown",
+            "target": None,
+            "direction": None,
+            "original_text": user_text,
+            "error": "Could not parse AI response"
+        }
+    except Exception as e:
+        return {
+            "action": "error",
+            "target": None,
+            "direction": None,
+            "original_text": user_text,
+            "error": str(e)
+        }
+
+# def analyze_with_gemini(user_text):
     """
     Hybrid approach: AI understanding + keyword extraction
     """
