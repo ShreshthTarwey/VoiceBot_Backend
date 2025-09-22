@@ -1,0 +1,239 @@
+# app.py - Main Flask Application for Sarathi Voice Bot
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
+import json
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)  # Enable CORS for React frontend to access this API
+
+# Configure Gemini AI
+genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+model = genai.GenerativeModel('gemini-1.5-flash')
+
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    """
+    Simple health check to verify the API is working
+    Returns: JSON response confirming API status
+    """
+    return jsonify({
+        "status": "healthy",
+        "message": "Sarathi Voice Bot API is running!",
+        "timestamp": "2025-09-22"
+    })
+
+# Main voice command processing endpoint
+@app.route('/process-command', methods=['POST'])
+def process_voice_command():
+    """
+    Main endpoint that receives text from frontend and processes it with Gemini AI
+    
+    Expected Input:
+    {
+        "text": "scroll down to about section"
+    }
+    
+    Returns:
+    {
+        "action": "scroll",
+        "direction": "down", 
+        "target": "about",
+        "original_text": "scroll down to about section"
+    }
+    """
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        
+        # Validate input
+        if not data or 'text' not in data:
+            return jsonify({
+                "error": "Missing 'text' field in request"
+            }), 400
+        
+        user_text = data['text'].strip()
+        
+        if not user_text:
+            return jsonify({
+                "error": "Text field is empty"
+            }), 400
+        
+        # Process with Gemini AI
+        response = analyze_with_gemini(user_text)
+        
+        return jsonify(response)
+    
+    except Exception as e:
+        return jsonify({
+            "error": f"Internal server error: {str(e)}"
+        }), 500
+def analyze_with_gemini(user_text):
+    """
+    Hybrid approach: AI understanding + keyword extraction
+    """
+    # First, let Gemini AI understand the user's intent
+    prompt = f"""
+You are a voice assistant for an accessibility website called "Sarathi".
+The website has sections: Header, About, Services, Contact, Footer.
+
+The user said: "{user_text}"
+
+Analyze what the user wants to do and respond in simple English describing the action.
+
+Examples:
+- If user wants to scroll down: "The user wants to scroll down the page"
+- If user wants to go to about section: "The user wants to navigate to the about section"
+- If user wants to read services: "The user wants to read the services section"
+- If user wants to go to top: "The user wants to scroll to the top of the page"
+- If unclear: "The user's command is not clear"
+
+Respond in simple, clear English describing the intended action.
+"""
+    
+    try:
+        # Get AI analysis
+        response = model.generate_content(prompt)
+        ai_response = response.text.strip().lower()
+        
+        print(f"AI Response: {ai_response}")  # Debug: see what AI says
+        
+        # Now extract keywords from AI response
+        return extract_action_from_ai_response(ai_response, user_text)
+    
+    except Exception as e:
+        # Fallback to rule-based if AI fails
+        return extract_action_from_user_text(user_text)
+
+def extract_action_from_ai_response(ai_response, original_text):
+    """
+    Extract structured actions from AI's text response
+    """
+    ai_response = ai_response.lower()
+    
+    # Scrolling actions
+    if "scroll down" in ai_response or "scroll downward" in ai_response:
+        return {"action": "scroll", "direction": "down", "target": None, "original_text": original_text}
+    elif "scroll up" in ai_response or "scroll upward" in ai_response:
+        return {"action": "scroll", "direction": "up", "target": None, "original_text": original_text}
+    elif "scroll to top" in ai_response or "go to top" in ai_response or "top of" in ai_response:
+        return {"action": "scroll", "direction": "top", "target": None, "original_text": original_text}
+    elif "scroll to bottom" in ai_response or "bottom of" in ai_response:
+        return {"action": "scroll", "direction": "bottom", "target": None, "original_text": original_text}
+    
+    # Navigation actions
+    elif "navigate to about" in ai_response or "go to about" in ai_response or "about section" in ai_response:
+        return {"action": "navigate", "target": "about", "direction": None, "original_text": original_text}
+    elif "navigate to services" in ai_response or "go to services" in ai_response or "services section" in ai_response:
+        return {"action": "navigate", "target": "services", "direction": None, "original_text": original_text}
+    elif "navigate to contact" in ai_response or "go to contact" in ai_response or "contact section" in ai_response:
+        return {"action": "navigate", "target": "contact", "direction": None, "original_text": original_text}
+    elif "navigate to header" in ai_response or "go to header" in ai_response or "header section" in ai_response:
+        return {"action": "navigate", "target": "header", "direction": None, "original_text": original_text}
+    
+    # Reading actions
+    elif "read about" in ai_response or "read the about" in ai_response:
+        return {"action": "read", "target": "about", "direction": None, "original_text": original_text}
+    elif "read services" in ai_response or "read the services" in ai_response:
+        return {"action": "read", "target": "services", "direction": None, "original_text": original_text}
+    elif "read contact" in ai_response or "read the contact" in ai_response:
+        return {"action": "read", "target": "contact", "direction": None, "original_text": original_text}
+    elif "read" in ai_response:
+        return {"action": "read", "target": "current", "direction": None, "original_text": original_text}
+    
+    # Unknown/unclear
+    else:
+        # Fallback to direct user text analysis
+        return extract_action_from_user_text(original_text)
+
+def extract_action_from_user_text(user_text):
+    """
+    Fallback: Direct rule-based analysis of user text
+    """
+    user_text = user_text.lower().strip()
+    
+    # Same rule-based logic as before (as backup)
+    if "scroll down" in user_text:
+        return {"action": "scroll", "direction": "down", "target": None, "original_text": user_text}
+    elif "scroll up" in user_text:
+        return {"action": "scroll", "direction": "up", "target": None, "original_text": user_text}
+    elif "about" in user_text:
+        return {"action": "navigate", "target": "about", "direction": None, "original_text": user_text}
+    elif "services" in user_text:
+        return {"action": "navigate", "target": "services", "direction": None, "original_text": user_text}
+    elif "contact" in user_text:
+        return {"action": "navigate", "target": "contact", "direction": None, "original_text": user_text}
+    else:
+        return {"action": "unknown", "target": None, "direction": None, "original_text": user_text, "error": "Command not recognized"}
+
+# def analyze_with_gemini(user_text):
+#     """
+#     Send user text to Gemini AI and get structured command response
+    
+#     Args:
+#         user_text (str): The text spoken by user
+        
+#     Returns:
+#         dict: Structured command for frontend to execute
+#     """
+#     # Create a detailed prompt for Gemini AI
+#     prompt = f"""
+# You are a JSON response generator for a voice-controlled website called "Sarathi".
+
+# User command: "{user_text}"
+
+# Analyze the command and respond with ONLY a valid JSON object (no other text):
+
+# For scrolling commands like "scroll down", "scroll up", "scroll to top":
+# {{"action": "scroll", "direction": "down", "target": null}}
+
+# For navigation commands like "go to about", "navigate to services":
+# {{"action": "navigate", "target": "about", "direction": null}}
+
+# For reading commands like "read the services", "read contact info":
+# {{"action": "read", "target": "services", "direction": null}}
+
+# Available targets: about, services, contact, header, footer
+# Available directions: up, down, top, bottom
+
+# Respond with ONLY valid JSON, no explanations or additional text.
+# """
+    
+#     try:
+#         response = model.generate_content(prompt)
+        
+#         # Parse the JSON response from Gemini
+#         gemini_response = json.loads(response.text.strip())
+#         gemini_response["original_text"] = user_text
+        
+#         return gemini_response
+    
+#     except json.JSONDecodeError:
+#         # Fallback if Gemini doesn't return valid JSON
+#         return {
+#             "action": "unknown",
+#             "target": None,
+#             "direction": None,
+#             "original_text": user_text,
+#             "error": "Could not understand command"
+#         }
+#     except Exception as e:
+#         return {
+#             "action": "error",
+#             "target": None,
+#             "direction": None,
+#             "original_text": user_text,
+#             "error": str(e)
+#         }
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
