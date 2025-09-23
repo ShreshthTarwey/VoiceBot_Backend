@@ -430,6 +430,20 @@ def extract_action_from_ai_response(ai_response, original_text):
     elif "scroll to bottom" in ai_response or "bottom of" in ai_response:
         return {"action": "scroll", "direction": "bottom", "target": None, "original_text": original_text}
 
+    # 👉 Reading actions FIRST (before navigation)
+    elif "read about" in ai_response:
+        return {"action": "read", "target": "about", "direction": None, "original_text": original_text}
+    elif "read services" in ai_response:
+        return {"action": "read", "target": "services", "direction": None, "original_text": original_text}
+    elif "read contact" in ai_response or "read the contact info" in ai_response:
+        return {"action": "read", "target": "contact", "direction": None, "original_text": original_text}
+    elif "read header" in ai_response:
+        return {"action": "read", "target": "header", "direction": None, "original_text": original_text}
+    elif "read footer" in ai_response:
+        return {"action": "read", "target": "footer", "direction": None, "original_text": original_text}
+    elif "read" in ai_response:
+        return {"action": "read", "target": "current", "direction": None, "original_text": original_text}
+
     # Navigation actions
     elif "about section" in ai_response:
         return {"action": "navigate", "target": "about", "direction": None, "original_text": original_text}
@@ -439,23 +453,17 @@ def extract_action_from_ai_response(ai_response, original_text):
         return {"action": "navigate", "target": "contact", "direction": None, "original_text": original_text}
     elif "header section" in ai_response:
         return {"action": "navigate", "target": "header", "direction": None, "original_text": original_text}
-
-    # Reading actions
-    elif "read about" in ai_response:
-        return {"action": "read", "target": "about", "direction": None, "original_text": original_text}
-    elif "read services" in ai_response:
-        return {"action": "read", "target": "services", "direction": None, "original_text": original_text}
-    elif "read contact" in ai_response:
-        return {"action": "read", "target": "contact", "direction": None, "original_text": original_text}
-    elif "read" in ai_response:
-        return {"action": "read", "target": "current", "direction": None, "original_text": original_text}
+    elif "footer section" in ai_response:
+        return {"action": "navigate", "target": "footer", "direction": None, "original_text": original_text}
 
     # Unknown
     return extract_action_from_user_text(original_text)
 
+
 def extract_action_from_user_text(user_text):
     user_text = user_text.lower().strip()
 
+    # Scrolling actions
     if "scroll down" in user_text:
         return {"action": "scroll", "direction": "down", "target": None, "original_text": user_text}
     elif "scroll up" in user_text:
@@ -464,6 +472,22 @@ def extract_action_from_user_text(user_text):
         return {"action": "scroll", "direction": "top", "target": None, "original_text": user_text}
     elif "bottom" in user_text:
         return {"action": "scroll", "direction": "bottom", "target": None, "original_text": user_text}
+
+    # 👉 Reading actions FIRST
+    elif "read about" in user_text:
+        return {"action": "read", "target": "about", "direction": None, "original_text": user_text}
+    elif "read services" in user_text:
+        return {"action": "read", "target": "services", "direction": None, "original_text": user_text}
+    elif "read contact" in user_text or "read the contact info" in user_text:
+        return {"action": "read", "target": "contact", "direction": None, "original_text": user_text}
+    elif "read header" in user_text:
+        return {"action": "read", "target": "header", "direction": None, "original_text": user_text}
+    elif "read footer" in user_text:
+        return {"action": "read", "target": "footer", "direction": None, "original_text": user_text}
+    elif "read" in user_text:
+        return {"action": "read", "target": "current", "direction": None, "original_text": user_text}
+
+    # Navigation actions
     elif "about" in user_text:
         return {"action": "navigate", "target": "about", "direction": None, "original_text": user_text}
     elif "services" in user_text:
@@ -472,10 +496,12 @@ def extract_action_from_user_text(user_text):
         return {"action": "navigate", "target": "contact", "direction": None, "original_text": user_text}
     elif "header" in user_text:
         return {"action": "navigate", "target": "header", "direction": None, "original_text": user_text}
-    elif "read" in user_text:
-        return {"action": "read", "target": "current", "direction": None, "original_text": user_text}
+    elif "footer" in user_text:
+        return {"action": "navigate", "target": "footer", "direction": None, "original_text": user_text}
+
     else:
         return {"action": "unknown", "target": None, "direction": None, "original_text": user_text}
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
