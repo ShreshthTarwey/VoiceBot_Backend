@@ -431,33 +431,34 @@ def extract_action_from_ai_response(ai_response, original_text):
         return {"action": "scroll", "direction": "bottom", "target": None, "original_text": original_text}
 
     # 👉 Reading actions FIRST (before navigation)
-    elif "read about" in ai_response:
+    elif "read" in ai_response and "about" in ai_response:
         return {"action": "read", "target": "about", "direction": None, "original_text": original_text}
-    elif "read services" in ai_response:
+    elif "read" in ai_response and "service" in ai_response:
         return {"action": "read", "target": "services", "direction": None, "original_text": original_text}
-    elif "read contact" in ai_response or "read the contact info" in ai_response:
+    elif "read" in ai_response and "contact" in ai_response:
         return {"action": "read", "target": "contact", "direction": None, "original_text": original_text}
-    elif "read header" in ai_response:
+    elif "read" in ai_response and "header" in ai_response:
         return {"action": "read", "target": "header", "direction": None, "original_text": original_text}
-    elif "read footer" in ai_response:
+    elif "read" in ai_response and "footer" in ai_response:
         return {"action": "read", "target": "footer", "direction": None, "original_text": original_text}
     elif "read" in ai_response:
         return {"action": "read", "target": "current", "direction": None, "original_text": original_text}
 
     # Navigation actions
-    elif "about section" in ai_response:
+    elif "about" in ai_response and "navigate" in ai_response or "go to about" in ai_response:
         return {"action": "navigate", "target": "about", "direction": None, "original_text": original_text}
-    elif "services section" in ai_response:
+    elif "service" in ai_response and "navigate" in ai_response or "go to services" in ai_response:
         return {"action": "navigate", "target": "services", "direction": None, "original_text": original_text}
-    elif "contact section" in ai_response:
+    elif "contact" in ai_response and "navigate" in ai_response or "go to contact" in ai_response:
         return {"action": "navigate", "target": "contact", "direction": None, "original_text": original_text}
-    elif "header section" in ai_response:
+    elif "header" in ai_response and "navigate" in ai_response:
         return {"action": "navigate", "target": "header", "direction": None, "original_text": original_text}
-    elif "footer section" in ai_response:
+    elif "footer" in ai_response and "navigate" in ai_response:
         return {"action": "navigate", "target": "footer", "direction": None, "original_text": original_text}
 
-    # Unknown
+    # Unknown → fallback
     return extract_action_from_user_text(original_text)
+
 
 
 def extract_action_from_user_text(user_text):
