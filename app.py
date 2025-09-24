@@ -305,11 +305,214 @@
 
 # app.py - Main Flask Application for Sarathi Voice Bot
 
+# from flask import Flask, request, jsonify
+# from flask_cors import CORS
+# import os
+# import google.generativeai as genai
+# from dotenv import load_dotenv
+
+# # Load environment variables from .env file
+# load_dotenv()
+
+# # Initialize Flask app
+# app = Flask(__name__)
+# CORS(app)  # Enable CORS for React frontend
+
+# # Configure Gemini AI
+# genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+# model = genai.GenerativeModel('gemini-1.5-flash')
+
+# # Health check endpoint
+# @app.route('/health', methods=['GET'])
+# def health_check():
+#     return jsonify({
+#         "status": "healthy",
+#         "message": "Sarathi Voice Bot API is running!"
+#     })
+
+# # Main voice command processing endpoint
+# @app.route('/process-command', methods=['POST'])
+# def process_voice_command():
+#     try:
+#         data = request.get_json()
+#         if not data or 'text' not in data:
+#             return jsonify({"error": "Missing 'text' field in request"}), 400
+
+#         user_text = data['text'].strip()
+#         if not user_text:
+#             return jsonify({"error": "Text field is empty"}), 400
+
+#         response = analyze_with_gemini(user_text)
+#         return jsonify(response)
+
+#     except Exception as e:
+#         return jsonify({
+#             "error": f"Internal server error: {str(e)}"
+#         }), 500
+
+# def analyze_with_gemini(user_text):
+#     """
+#     Ask Gemini to output a simple English explanation (string),
+#     then extract structured action with keyword rules.
+#     """
+#     prompt = f"""
+# You are a smart voice assistant for the accessibility website "Sarathi".
+# The website has these sections: Header, About, Services, Contact, Footer.
+
+# The user said: "{user_text}"
+
+# Your task:
+# - Carefully analyze the users command.
+# - Respond ONLY with one short English sentence describing the action.
+# - Do NOT return JSON, lists, or explanations. Just one sentence in plain English.
+
+# Rules for responses:
+
+# 1. **Scrolling actions**
+#    - If the user wants to scroll down:
+#      → "The user wants to scroll down the page"
+#    - If the user wants to scroll up:
+#      → "The user wants to scroll up the page"
+#    - If the user wants to scroll to the top:
+#      → "The user wants to scroll to the top of the page"
+#    - If the user wants to scroll to the bottom:
+#      → "The user wants to scroll to the bottom of the page"
+
+# 2. **Navigation actions**
+#    - If the user wants to go to a section (about, services, contact, header, footer):
+#      → "The user wants to navigate to the about section"
+#      → "The user wants to navigate to the services section"
+#      → "The user wants to navigate to the contact section"
+#      → "The user wants to navigate to the header section"
+#      → "The user wants to navigate to the footer section"
+
+# 3. **Reading actions**
+#    - If the user wants the bot to read a section aloud:
+#      → "The user wants to read the about section"
+#      → "The user wants to read the services section"
+#      → "The user wants to read the contact section"
+#      → "The user wants to read the header section"
+#      → "The user wants to read the footer section"
+#    - If the user says something like "read this" or "read here":
+#      → "The user wants to read the current section"
+
+# 4. **Unclear actions**
+#    - If the command cannot be understood:
+#      → "The user's command is not clear"
+
+# Important:
+# - Use the exact sentence formats above.
+# - Do not invent new words, synonyms, or extra text.
+# - Always stick to one clear sentence.
+# """
+
+
+#     try:
+#         response = model.generate_content(prompt)
+#         ai_response = response.text.strip()
+#         print(f"AI Response: {ai_response}")  # Debug
+
+#         return extract_action_from_ai_response(ai_response, user_text)
+
+#     except Exception as e:
+#         return extract_action_from_user_text(user_text)
+
+# def extract_action_from_ai_response(ai_response, original_text):
+#     ai_response = ai_response.lower()
+
+#     # Scrolling actions
+#     if "scroll down" in ai_response:
+#         return {"action": "scroll", "direction": "down", "target": None, "original_text": original_text}
+#     elif "scroll up" in ai_response:
+#         return {"action": "scroll", "direction": "up", "target": None, "original_text": original_text}
+#     elif "scroll to top" in ai_response or "top of" in ai_response:
+#         return {"action": "scroll", "direction": "top", "target": None, "original_text": original_text}
+#     elif "scroll to bottom" in ai_response or "bottom of" in ai_response:
+#         return {"action": "scroll", "direction": "bottom", "target": None, "original_text": original_text}
+
+#     # 👉 Reading actions FIRST (before navigation)
+#     elif "read" in ai_response and "about" in ai_response:
+#         return {"action": "read", "target": "about", "direction": None, "original_text": original_text}
+#     elif "read" in ai_response and "service" in ai_response:
+#         return {"action": "read", "target": "services", "direction": None, "original_text": original_text}
+#     elif "read" in ai_response and "contact" in ai_response:
+#         return {"action": "read", "target": "contact", "direction": None, "original_text": original_text}
+#     elif "read" in ai_response and "header" in ai_response:
+#         return {"action": "read", "target": "header", "direction": None, "original_text": original_text}
+#     elif "read" in ai_response and "footer" in ai_response:
+#         return {"action": "read", "target": "footer", "direction": None, "original_text": original_text}
+#     elif "read" in ai_response:
+#         return {"action": "read", "target": "current", "direction": None, "original_text": original_text}
+
+#     # Navigation actions
+#     elif "about" in ai_response and "navigate" in ai_response or "go to about" in ai_response:
+#         return {"action": "navigate", "target": "about", "direction": None, "original_text": original_text}
+#     elif "service" in ai_response and "navigate" in ai_response or "go to services" in ai_response:
+#         return {"action": "navigate", "target": "services", "direction": None, "original_text": original_text}
+#     elif "contact" in ai_response and "navigate" in ai_response or "go to contact" in ai_response:
+#         return {"action": "navigate", "target": "contact", "direction": None, "original_text": original_text}
+#     elif "header" in ai_response and "navigate" in ai_response:
+#         return {"action": "navigate", "target": "header", "direction": None, "original_text": original_text}
+#     elif "footer" in ai_response and "navigate" in ai_response:
+#         return {"action": "navigate", "target": "footer", "direction": None, "original_text": original_text}
+
+#     # Unknown → fallback
+#     return extract_action_from_user_text(original_text)
+
+
+
+# def extract_action_from_user_text(user_text):
+#     user_text = user_text.lower().strip()
+
+#     # Scrolling actions
+#     if "scroll down" in user_text:
+#         return {"action": "scroll", "direction": "down", "target": None, "original_text": user_text}
+#     elif "scroll up" in user_text:
+#         return {"action": "scroll", "direction": "up", "target": None, "original_text": user_text}
+#     elif "top" in user_text:
+#         return {"action": "scroll", "direction": "top", "target": None, "original_text": user_text}
+#     elif "bottom" in user_text:
+#         return {"action": "scroll", "direction": "bottom", "target": None, "original_text": user_text}
+
+#     # 👉 Reading actions FIRST
+#     elif "read about" in user_text:
+#         return {"action": "read", "target": "about", "direction": None, "original_text": user_text}
+#     elif "read services" in user_text:
+#         return {"action": "read", "target": "services", "direction": None, "original_text": user_text}
+#     elif "read contact" in user_text or "read the contact info" in user_text:
+#         return {"action": "read", "target": "contact", "direction": None, "original_text": user_text}
+#     elif "read header" in user_text:
+#         return {"action": "read", "target": "header", "direction": None, "original_text": user_text}
+#     elif "read footer" in user_text:
+#         return {"action": "read", "target": "footer", "direction": None, "original_text": user_text}
+#     elif "read" in user_text:
+#         return {"action": "read", "target": "current", "direction": None, "original_text": user_text}
+
+#     # Navigation actions
+#     elif "about" in user_text:
+#         return {"action": "navigate", "target": "about", "direction": None, "original_text": user_text}
+#     elif "services" in user_text:
+#         return {"action": "navigate", "target": "services", "direction": None, "original_text": user_text}
+#     elif "contact" in user_text:
+#         return {"action": "navigate", "target": "contact", "direction": None, "original_text": user_text}
+#     elif "header" in user_text:
+#         return {"action": "navigate", "target": "header", "direction": None, "original_text": user_text}
+#     elif "footer" in user_text:
+#         return {"action": "navigate", "target": "footer", "direction": None, "original_text": user_text}
+
+#     else:
+#         return {"action": "unknown", "target": None, "direction": None, "original_text": user_text}
+
+
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=5000, debug=True)
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+import json # Import the json library
 
 # Load environment variables from .env file
 load_dotenv()
@@ -319,8 +522,12 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
 
 # Configure Gemini AI
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-1.5-flash')
+try:
+    genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
+    model = genai.GenerativeModel('gemini-1.5-flash')
+except Exception as e:
+    print(f"Error configuring Gemini AI: {e}")
+    model = None
 
 # Health check endpoint
 @app.route('/health', methods=['GET'])
@@ -333,6 +540,9 @@ def health_check():
 # Main voice command processing endpoint
 @app.route('/process-command', methods=['POST'])
 def process_voice_command():
+    if not model:
+        return jsonify({"error": "Gemini AI model is not configured"}), 500
+        
     try:
         data = request.get_json()
         if not data or 'text' not in data:
@@ -342,167 +552,119 @@ def process_voice_command():
         if not user_text:
             return jsonify({"error": "Text field is empty"}), 400
 
-        response = analyze_with_gemini(user_text)
-        return jsonify(response)
+        # The new function does all the work
+        response_json = analyze_and_get_json(user_text)
+        
+        # Add the original text to the final response for the frontend
+        response_json['original_text'] = user_text
+        
+        return jsonify(response_json)
 
     except Exception as e:
         return jsonify({
             "error": f"Internal server error: {str(e)}"
         }), 500
 
-def analyze_with_gemini(user_text):
+def analyze_and_get_json(user_text):
     """
-    Ask Gemini to output a simple English explanation (string),
-    then extract structured action with keyword rules.
+    Asks Gemini to directly output a JSON object based on the user's command.
+    Includes robust parsing and a fallback.
     """
+    
+    # The prompt remains the same
     prompt = f"""
-You are a smart voice assistant for the accessibility website "Sarathi".
-The website has these sections: Header, About, Services, Contact, Footer.
+You are a highly intelligent voice command interpreter for a web accessibility application named "Sarathi".
+Your ONLY job is to convert the user's spoken command into a structured JSON object.
+Do NOT respond with any explanations, pleasantries, or text outside of the JSON object.
 
-The user said: "{user_text}"
+The website has the following sections: "header", "about", "services", "contact", "footer".
 
-Your task:
-- Carefully analyze the users command.
-- Respond ONLY with one short English sentence describing the action.
-- Do NOT return JSON, lists, or explanations. Just one sentence in plain English.
+The JSON object MUST have the following structure:
+{{
+  "action": "string",
+  "target": "string or null",
+  "direction": "string or null"
+}}
 
-Rules for responses:
+Here are the rules for the JSON values:
 
-1. **Scrolling actions**
-   - If the user wants to scroll down:
-     → "The user wants to scroll down the page"
-   - If the user wants to scroll up:
-     → "The user wants to scroll up the page"
-   - If the user wants to scroll to the top:
-     → "The user wants to scroll to the top of the page"
-   - If the user wants to scroll to the bottom:
-     → "The user wants to scroll to the bottom of the page"
+1.  **"action"** (string): Must be one of the following:
+    - "navigate": For moving to a specific section.
+    - "scroll": For scrolling the page.
+    - "read": For reading a section's content aloud.
+    - "unknown": If the user's intent is unclear.
 
-2. **Navigation actions**
-   - If the user wants to go to a section (about, services, contact, header, footer):
-     → "The user wants to navigate to the about section"
-     → "The user wants to navigate to the services section"
-     → "The user wants to navigate to the contact section"
-     → "The user wants to navigate to the header section"
-     → "The user wants to navigate to the footer section"
+2.  **"target"** (string or null):
+    - If action is "navigate" or "read", this MUST be one of: "header", "about", "services", "contact", "footer".
+    - If action is "scroll", this MUST be null.
+    - For ambiguous commands like "read this", use "current".
 
-3. **Reading actions**
-   - If the user wants the bot to read a section aloud:
-     → "The user wants to read the about section"
-     → "The user wants to read the services section"
-     → "The user wants to read the contact section"
-     → "The user wants to read the header section"
-     → "The user wants to read the footer section"
-   - If the user says something like "read this" or "read here":
-     → "The user wants to read the current section"
+3.  **"direction"** (string or null):
+    - If action is "scroll", this MUST be one of: "up", "down", "top", "bottom".
+    - Otherwise, it MUST be null.
 
-4. **Unclear actions**
-   - If the command cannot be understood:
-     → "The user's command is not clear"
+---
+Here are some examples:
 
-Important:
-- Use the exact sentence formats above.
-- Do not invent new words, synonyms, or extra text.
-- Always stick to one clear sentence.
+User command: "scroll down a little bit"
+{{
+  "action": "scroll",
+  "target": null,
+  "direction": "down"
+}}
+
+User command: "tell me about the services"
+{{
+  "action": "read",
+  "target": "services",
+  "direction": null
+}}
+
+User command: "Uhh, I want to go to the contact stuff"
+{{
+  "action": "navigate",
+  "target": "contact",
+  "direction": null
+}}
+
+User command: "what is the price of gold"
+{{
+  "action": "unknown",
+  "target": null,
+  "direction": null
+}}
+---
+
+Now, analyze the following user command and provide ONLY the JSON response.
+
+User command: "{user_text}"
 """
 
-
+    # --- THE FIX IS IN THIS TRY/EXCEPT BLOCK ---
+    response = None # Initialize response to None
     try:
         response = model.generate_content(prompt)
-        ai_response = response.text.strip()
-        print(f"AI Response: {ai_response}")  # Debug
-
-        return extract_action_from_ai_response(ai_response, user_text)
+        ai_response_text = response.text.strip()
+        
+        if ai_response_text.startswith("```json"):
+            ai_response_text = ai_response_text[7:-3].strip()
+        
+        parsed_json = json.loads(ai_response_text)
+        return parsed_json
 
     except Exception as e:
-        return extract_action_from_user_text(user_text)
-
-def extract_action_from_ai_response(ai_response, original_text):
-    ai_response = ai_response.lower()
-
-    # Scrolling actions
-    if "scroll down" in ai_response:
-        return {"action": "scroll", "direction": "down", "target": None, "original_text": original_text}
-    elif "scroll up" in ai_response:
-        return {"action": "scroll", "direction": "up", "target": None, "original_text": original_text}
-    elif "scroll to top" in ai_response or "top of" in ai_response:
-        return {"action": "scroll", "direction": "top", "target": None, "original_text": original_text}
-    elif "scroll to bottom" in ai_response or "bottom of" in ai_response:
-        return {"action": "scroll", "direction": "bottom", "target": None, "original_text": original_text}
-
-    # 👉 Reading actions FIRST (before navigation)
-    elif "read" in ai_response and "about" in ai_response:
-        return {"action": "read", "target": "about", "direction": None, "original_text": original_text}
-    elif "read" in ai_response and "service" in ai_response:
-        return {"action": "read", "target": "services", "direction": None, "original_text": original_text}
-    elif "read" in ai_response and "contact" in ai_response:
-        return {"action": "read", "target": "contact", "direction": None, "original_text": original_text}
-    elif "read" in ai_response and "header" in ai_response:
-        return {"action": "read", "target": "header", "direction": None, "original_text": original_text}
-    elif "read" in ai_response and "footer" in ai_response:
-        return {"action": "read", "target": "footer", "direction": None, "original_text": original_text}
-    elif "read" in ai_response:
-        return {"action": "read", "target": "current", "direction": None, "original_text": original_text}
-
-    # Navigation actions
-    elif "about" in ai_response and "navigate" in ai_response or "go to about" in ai_response:
-        return {"action": "navigate", "target": "about", "direction": None, "original_text": original_text}
-    elif "service" in ai_response and "navigate" in ai_response or "go to services" in ai_response:
-        return {"action": "navigate", "target": "services", "direction": None, "original_text": original_text}
-    elif "contact" in ai_response and "navigate" in ai_response or "go to contact" in ai_response:
-        return {"action": "navigate", "target": "contact", "direction": None, "original_text": original_text}
-    elif "header" in ai_response and "navigate" in ai_response:
-        return {"action": "navigate", "target": "header", "direction": None, "original_text": original_text}
-    elif "footer" in ai_response and "navigate" in ai_response:
-        return {"action": "navigate", "target": "footer", "direction": None, "original_text": original_text}
-
-    # Unknown → fallback
-    return extract_action_from_user_text(original_text)
-
-
-
-def extract_action_from_user_text(user_text):
-    user_text = user_text.lower().strip()
-
-    # Scrolling actions
-    if "scroll down" in user_text:
-        return {"action": "scroll", "direction": "down", "target": None, "original_text": user_text}
-    elif "scroll up" in user_text:
-        return {"action": "scroll", "direction": "up", "target": None, "original_text": user_text}
-    elif "top" in user_text:
-        return {"action": "scroll", "direction": "top", "target": None, "original_text": user_text}
-    elif "bottom" in user_text:
-        return {"action": "scroll", "direction": "bottom", "target": None, "original_text": user_text}
-
-    # 👉 Reading actions FIRST
-    elif "read about" in user_text:
-        return {"action": "read", "target": "about", "direction": None, "original_text": user_text}
-    elif "read services" in user_text:
-        return {"action": "read", "target": "services", "direction": None, "original_text": user_text}
-    elif "read contact" in user_text or "read the contact info" in user_text:
-        return {"action": "read", "target": "contact", "direction": None, "original_text": user_text}
-    elif "read header" in user_text:
-        return {"action": "read", "target": "header", "direction": None, "original_text": user_text}
-    elif "read footer" in user_text:
-        return {"action": "read", "target": "footer", "direction": None, "original_text": user_text}
-    elif "read" in user_text:
-        return {"action": "read", "target": "current", "direction": None, "original_text": user_text}
-
-    # Navigation actions
-    elif "about" in user_text:
-        return {"action": "navigate", "target": "about", "direction": None, "original_text": user_text}
-    elif "services" in user_text:
-        return {"action": "navigate", "target": "services", "direction": None, "original_text": user_text}
-    elif "contact" in user_text:
-        return {"action": "navigate", "target": "contact", "direction": None, "original_text": user_text}
-    elif "header" in user_text:
-        return {"action": "navigate", "target": "header", "direction": None, "original_text": user_text}
-    elif "footer" in user_text:
-        return {"action": "navigate", "target": "footer", "direction": None, "original_text": user_text}
-
-    else:
-        return {"action": "unknown", "target": None, "direction": None, "original_text": user_text}
-
+        # The corrected error logging:
+        # It no longer tries to access 'response.text' if 'response' might not exist.
+        if response:
+             print(f"Error processing Gemini response: {e}\nResponse was: {response.text}")
+        else:
+             print(f"Failed to get response from Gemini API: {e}")
+       
+        return {
+            "action": "unknown",
+            "target": None,
+            "direction": None
+        }
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

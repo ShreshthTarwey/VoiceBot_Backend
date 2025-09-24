@@ -4,7 +4,10 @@ import requests
 import json
 
 # Your deployed API URL
-API_BASE_URL = "https://voicebot-backend-6hfd.onrender.com"
+# API_BASE_URL = "https://voicebot-backend-6hfd.onrender.com"
+API_BASE_URL= "http://127.0.0.1:5000"
+
+
 
 def test_health_endpoint():
     """Test the health check endpoint"""
