@@ -12,7 +12,7 @@ def test_gemini_connection():
     # 1. Load environment variables from your .env file
     try:
         load_dotenv()
-        api_key = os.getenv('GEMINI_API_KEY')
+        api_key = os.getenv('VOICE_BOT_API_KEY')
         print(f"Found API Key in .env file: {'Yes' if api_key else 'No'}")
         print(api_key)
 

@@ -5,6 +5,7 @@ import json
 
 # Configuration
 API_BASE_URL = "http://localhost:5000"  # Change this when testing deployed version
+# API_BASE_URL= "https://voicebot-backend-6hfd.onrender.com"
 
 def test_health_endpoint():
     """Test the health check endpoint"""
