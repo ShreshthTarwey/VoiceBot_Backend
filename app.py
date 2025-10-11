@@ -2310,44 +2310,156 @@ def get_general_answer(user_text):
 
 
 # --- THIS IS THE UPDATED, MORE POWERFUL FUNCTION ---
-def get_website_command_json(user_text, page_commands):
-    # If page_commands is empty (e.g., during testing), use a default list.
-    if not page_commands:
-        page_commands = ["home", "features", "about", "services", "contact", "community", "join"]
+# def get_website_command_json(user_text, page_commands):
+#     # If page_commands is empty (e.g., during testing), use a default list.
+#     if not page_commands:
+#         page_commands = ["home", "features", "about", "services", "contact", "community", "join"]
 
-    # Define the global links that are always available in the navigation bar
-    global_links = ["Communication", "Education", "Stories", "Mission", "Profile", "Logout"]
+#     # Define the global links that are always available in the navigation bar
+#     global_links = ["Communication", "Education", "Stories", "Mission", "Profile", "Logout"]
     
-    valid_targets_str = ", ".join([f'"{cmd}"' for cmd in page_commands])
-    global_links_str = ", ".join([f'"{link}"' for link in global_links])
+#     valid_targets_str = ", ".join([f'"{cmd}"' for cmd in page_commands])
+#     global_links_str = ", ".join([f'"{link}"' for link in global_links])
 
-    # A more powerful prompt that teaches the AI about different action types
+#     # A more powerful prompt that teaches the AI about different action types
+#     prompt = f"""
+# You are a precise JSON interpreter for a website's voice control system. Your ONLY job is to convert the user's command into a perfectly structured JSON object.
+
+# **AVAILABLE ACTIONS & TARGETS:**
+# 1.  **Scroll to a section ON THE CURRENT PAGE:** Use `action: "navigate"`. The `target` must be one of the Current Page Sections.
+# 2.  **Navigate to a DIFFERENT PAGE:** Use `action: "goToPage"`. The `target` must be a URL path (e.g., "/communication").
+# 3.  **Click a button or link:** Use `action: "click"`. The `target` must be the text on the button (e.g., "Logout").
+# 4.  **General Scrolling:** Use `action: "scroll"` with a `direction`.
+
+# **CONTEXT:**
+# -   **Global Navigation Links (available on all pages):** {global_links_str}
+# -   **Current Page Sections (only on this page):** {valid_targets_str}
+
+# **CRITICAL RULES:**
+# -   For `action: "goToPage"`, the `target` MUST be a lowercase URL path, like "/stories".
+# -   For `action: "click"`, the `target` MUST be the exact text of the button, like "Profile".
+# -   For `action: "navigate"`, the `target` MUST be a single word ID from the current page sections, like "features".
+# -   `direction` MUST be `null` unless the action is `"scroll"`.
+
+# **COMMAND ANALYSIS:**
+# The user said: "{user_text}"
+
+# **EXAMPLES:**
+# - User command: "scroll to the features" -> {{"action": "navigate", "target": "features", "direction": null}}
+# - User command: "go to the communication page" -> {{"action": "goToPage", "target": "/communication", "direction": null}}
+# - User command: "click the logout button" -> {{"action": "click", "target": "Logout", "direction": null}}
+
+# Now, generate ONLY the JSON object for the user's command.
+# """
+#     try:
+#         response = model.generate_content(prompt)
+#         ai_response_text = response.text.strip().replace("```json", "").replace("```", "")
+#         parsed_json = json.loads(ai_response_text)
+#         return parsed_json
+#     except Exception as e:
+#         print(f"Error parsing website command JSON: {e}")
+#         return {"action": "unknown", "target": None, "direction": None}
+
+# In app.py, replace ONLY this function
+
+# def get_website_command_json(user_text, page_commands):
+#     # This logic now also needs to know about the inputs on the page
+#     # For now, we'll add them directly to the prompt.
+    
+#     # Define global elements and pages
+#     global_links = ["Communication", "Education", "Stories", "Mission", "Profile", "Logout", "Sign Up"]
+#     # Define common form field labels
+#     form_fields = ["Full Name", "Email Address", "Password", "Confirm Password"]
+
+#     valid_targets_str = ", ".join([f'"{cmd}"' for cmd in page_commands]) if page_commands else '"none"'
+#     global_links_str = ", ".join([f'"{link}"' for link in global_links])
+#     form_fields_str = ", ".join([f'"{field}"' for field in form_fields])
+
+#     prompt = f"""
+# You are a precise JSON interpreter for a website's voice control system. Your ONLY job is to convert the user's command into a perfectly structured JSON object.
+
+# **AVAILABLE ACTIONS & TARGETS:**
+# 1.  **Fill a form field:** Use `action: "fillInput"`.
+#     - `target`: The label of the form field (e.g., "Full Name").
+#     - `value`: The text to fill into the field (e.g., "John Doe").
+# 2.  **Click a button or link:** Use `action: "click"`. The `target` must be the text on the button.
+# 3.  **Navigate to a different page:** Use `action: "goToPage"`. The `target` must be a URL path.
+# 4.  **Scroll to a section on the current page:** Use `action: "navigate"`. The `target` must be a section ID.
+# 5.  **General Scrolling:** Use `action: "scroll"` with a `direction`.
+
+# **CONTEXT:**
+# -   **Global Clickable Elements:** {global_links_str}
+# -   **Form Fields on This Page:** {form_fields_str}
+# -   **Scrollable Sections on This Page:** {valid_targets_str}
+
+# **CRITICAL RULES:**
+# -   For "fill" commands, you MUST extract both the target field label and the value.
+# -   `direction` MUST be `null` unless the action is `"scroll"`.
+
+# **COMMAND ANALYSIS:**
+# The user said: "{user_text}"
+
+# **EXAMPLES:**
+# - User command: "go to the communication page" -> {{"action": "goToPage", "target": "/communication"}}
+# - User command: "click the logout button" -> {{"action": "click", "target": "Logout"}}
+# - User command: "fill the Full Name field with John Doe" -> {{"action": "fillInput", "target": "Full Name", "value": "John Doe"}}
+# - User command: "my email address is example@test.com" -> {{"action": "fillInput", "target": "Email Address", "value": "example@test.com"}}
+
+# Now, generate ONLY the JSON object for the user's command.
+# """
+#     try:
+#         response = model.generate_content(prompt)
+#         ai_response_text = response.text.strip().replace("```json", "").replace("```", "")
+#         parsed_json = json.loads(ai_response_text)
+#         return parsed_json
+#     except Exception as e:
+#         print(f"Error parsing website command JSON: {e}")
+#         return {"action": "unknown"}
+
+def get_website_command_json(user_text, page_commands):
+    # This logic now also needs to know about the inputs on the page
+    # For now, we'll add them directly to the prompt.
+    
+    # Define global elements and pages
+    global_links = ["Communication", "Education", "Stories", "Mission", "Profile", "Logout", "Sign Up"]
+    # Define common form field labels
+    form_fields = ["Full Name", "Email Address", "Password", "Confirm Password"]
+
+    valid_targets_str = ", ".join([f'"{cmd}"' for cmd in page_commands]) if page_commands else '"none"'
+    global_links_str = ", ".join([f'"{link}"' for link in global_links])
+    form_fields_str = ", ".join([f'"{field}"' for field in form_fields])
+
+    # UPDATED: The prompt now has a specific rule for handling emails.
     prompt = f"""
 You are a precise JSON interpreter for a website's voice control system. Your ONLY job is to convert the user's command into a perfectly structured JSON object.
 
 **AVAILABLE ACTIONS & TARGETS:**
-1.  **Scroll to a section ON THE CURRENT PAGE:** Use `action: "navigate"`. The `target` must be one of the Current Page Sections.
-2.  **Navigate to a DIFFERENT PAGE:** Use `action: "goToPage"`. The `target` must be a URL path (e.g., "/communication").
-3.  **Click a button or link:** Use `action: "click"`. The `target` must be the text on the button (e.g., "Logout").
-4.  **General Scrolling:** Use `action: "scroll"` with a `direction`.
+1.  **Fill a form field:** Use `action: "fillInput"`.
+    - `target`: The label of the form field (e.g., "Full Name").
+    - `value`: The text to fill into the field (e.g., "John Doe").
+2.  **Click a button or link:** Use `action: "click"`. The `target` must be the text on the button.
+3.  **Navigate to a different page:** Use `action: "goToPage"`. The `target` must be a URL path.
+4.  **Scroll to a section on the current page:** Use `action: "navigate"`. The `target` must be a section ID.
+5.  **General Scrolling:** Use `action: "scroll"` with a `direction`.
 
 **CONTEXT:**
--   **Global Navigation Links (available on all pages):** {global_links_str}
--   **Current Page Sections (only on this page):** {valid_targets_str}
+-   **Global Clickable Elements:** {global_links_str}
+-   **Form Fields on This Page:** {form_fields_str}
+-   **Scrollable Sections on This Page:** {valid_targets_str}
 
 **CRITICAL RULES:**
--   For `action: "goToPage"`, the `target` MUST be a lowercase URL path, like "/stories".
--   For `action: "click"`, the `target` MUST be the exact text of the button, like "Profile".
--   For `action: "navigate"`, the `target` MUST be a single word ID from the current page sections, like "features".
+-   For "fill" commands, you MUST extract both the target field label and the value.
+-   **When extracting an email address, be literal and convert spoken words to symbols. For example, "my email is test at example dot com" MUST result in "value": "test@example.com".**
 -   `direction` MUST be `null` unless the action is `"scroll"`.
 
 **COMMAND ANALYSIS:**
 The user said: "{user_text}"
 
 **EXAMPLES:**
-- User command: "scroll to the features" -> {{"action": "navigate", "target": "features", "direction": null}}
-- User command: "go to the communication page" -> {{"action": "goToPage", "target": "/communication", "direction": null}}
-- User command: "click the logout button" -> {{"action": "click", "target": "Logout", "direction": null}}
+- User command: "go to the communication page" -> {{"action": "goToPage", "target": "/communication"}}
+- User command: "click the logout button" -> {{"action": "click", "target": "Logout"}}
+- User command: "fill the Full Name field with John Doe" -> {{"action": "fillInput", "target": "Full Name", "value": "John Doe"}}
+- User command: "my email address is example at test dot com" -> {{"action": "fillInput", "target": "Email Address", "value": "example@test.com"}}
 
 Now, generate ONLY the JSON object for the user's command.
 """
@@ -2358,7 +2470,7 @@ Now, generate ONLY the JSON object for the user's command.
         return parsed_json
     except Exception as e:
         print(f"Error parsing website command JSON: {e}")
-        return {"action": "unknown", "target": None, "direction": None}
+        return {"action": "unknown"}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
